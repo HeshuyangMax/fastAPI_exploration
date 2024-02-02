@@ -13,7 +13,7 @@ app = FastAPI()
 registry = CollectorRegistry()
 
 # 创建一个 Gauge 指标，用于度量"my_metric"的值
-my_metric = Gauge('响应时长', '记录请求“http://8.134.171.142/”时的接口响应时长')
+my_metric = Gauge("response_time", "记录请求“http://8.134.171.142/”时的接口响应时长")
 
 registry.register(my_metric)
 
