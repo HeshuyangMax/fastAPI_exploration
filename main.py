@@ -5,7 +5,7 @@ import random
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from prometheus_client import CollectorRegistry, Gauge
+from prometheus_client import CollectorRegistry, Gauge, make_asgi_app
 
 app = FastAPI()
 
@@ -16,6 +16,8 @@ registry = CollectorRegistry()
 my_metric = Gauge("response_time", "记录请求“http://8.134.171.142/”时的接口响应时长")
 
 registry.register(my_metric)
+
+app.mount("/metrics", make_asgi_app(registry), name="metrics")  # 设置Prometheus的端点为/metrics
 
 class Item(BaseModel):
     name: str
