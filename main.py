@@ -1,23 +1,25 @@
-from typing import Union
 import time
 import random
-
+import logging
+from typing import Union
 from fastapi import FastAPI
 from pydantic import BaseModel
+from prometheus_client import CollectorRegistry, Gauge, Histogram, Counter, make_asgi_app
 
-from prometheus_client import CollectorRegistry, Gauge, make_asgi_app
-
+# 创建fastapi应用
 app = FastAPI()
-
 # 创建一个 CollectorRegistry 对象，用于注册指标
 registry = CollectorRegistry()
-
-# 创建一个 Gauge 指标，用于度量"my_metric"的值
-my_metric = Gauge("response_time", "记录请求“http://8.134.171.142/”时的接口响应时长")
-
-registry.register(my_metric)
-
-app.mount("/metrics", make_asgi_app(registry), name="metrics")  # 设置Prometheus的端点为/metrics
+# 记录接口响应时长的值
+responseTime = Gauge("response_time", "记录请求http://8.134.171.142/时的接口响应时长")
+# 记录接口请求量
+requestNum = Counter("request_number", "记录请求http://8.134.171.142/接口的数量")
+# 注册指标
+registry.register(responseTime)
+registry.register(requestNum)
+# 设置Prometheus的端点为/metrics
+metrics_app = make_asgi_app(registry)
+app.mount("/metrics", metrics_app, name="metrics")
 
 class Item(BaseModel):
     name: str
@@ -31,14 +33,11 @@ def random_sleep():
     time.sleep(sleep_time)
 
 @app.get("/")
+@responseTime.time()
 def read_root():
-    startTime = time.time()
     random_sleep()
-    endTime = time.time()
-    responseTime = endTime - startTime
-    my_metric.set(responseTime)
+    requestNum.inc()
     return {"Hello": "World"}
-
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):
