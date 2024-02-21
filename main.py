@@ -1,6 +1,7 @@
 import time
 import random
 import logging
+import datetime
 from typing import Union
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -8,6 +9,14 @@ from prometheus_client import CollectorRegistry, Gauge, Histogram, Counter, make
 
 # 创建fastapi应用
 app = FastAPI()
+# 日志格式配置
+now = datetime.datetime.now()
+filename = now.strftime("%Y-%m-%d")
+logging.basicConfig(
+    filename="logs/" + str(filename),
+    level=logging.INFO,
+    format='%(levelname)s: Process ID: %(process)d Thread ID: %(thread)d Time Stamp: %(asctime)s Recorder: %(name)s Message: %(message)s'
+)
 # 创建一个 CollectorRegistry 对象，用于注册指标
 registry = CollectorRegistry()
 # 记录接口响应时长的值
@@ -28,14 +37,15 @@ class Item(BaseModel):
 
 def random_sleep():
     # 生成随机睡眠时间（范围在 1 到 5 秒之间）
-    sleep_time = random.randint(1, 5)  
-    print(f"将睡眠 {sleep_time} 秒...")
-    time.sleep(sleep_time)
+    sleepTime = random.randint(1, 5)  
+    time.sleep(sleepTime)
+    return sleepTime
 
 @app.get("/")
 @responseTime.time()
 def read_root():
-    random_sleep()
+    sleepTime = random_sleep()
+    logging.info("Response time is " + str(sleepTime) + " seconds.")
     requestNum.inc()
     return {"Hello": "World"}
 
